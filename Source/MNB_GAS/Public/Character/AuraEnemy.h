@@ -22,7 +22,17 @@ public:
 
 	virtual void UnHighlightActor() override;
 
+	// Õ½¶·½Ó¿Ú
+
+	virtual int32 GetPlayerLevel() override;
+
 protected:
 	virtual void BeginPlay() override;
 	
+	virtual void InitAbilityActorInfo() override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Class Defualts")
+	int32 Level = 1;
 };
+
+	

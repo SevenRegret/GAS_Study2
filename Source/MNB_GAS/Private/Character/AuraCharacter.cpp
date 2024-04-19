@@ -25,7 +25,7 @@ void AAuraCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
-	InitAbilityInfo();
+	InitAbilityActorInfo();
 }
 
 void AAuraCharacter::OnRep_PlayerState()
@@ -33,13 +33,24 @@ void AAuraCharacter::OnRep_PlayerState()
 	Super::OnRep_PlayerState();
 }
 
-void AAuraCharacter::InitAbilityInfo()
+int32 AAuraCharacter::GetPlayerLevel()
+{
+	AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();
+
+	check(AuraPlayerState);
+
+	return AuraPlayerState->GetPlayerLevel();
+}
+
+void AAuraCharacter::InitAbilityActorInfo()
 {
 	// 初始化技能Acotrinfo
 	AAuraPlayerState* AuraPlayerState = GetPlayerState<AAuraPlayerState>();
 	check(AuraPlayerState);
 
 	AuraPlayerState->GetAbilitySystemComponent()->InitAbilityActorInfo(AuraPlayerState, this);
+	//
+	Cast<UAuraAbilitySystemComponent>(AuraPlayerState->GetAbilitySystemComponent())->AbilityActorInfoSet();
 
 	AbilitySystemComponent = AuraPlayerState->GetAbilitySystemComponent();
 	AttributeSet = AuraPlayerState->GetAttributeSet();
@@ -54,6 +65,6 @@ void AAuraCharacter::InitAbilityInfo()
 		}
 	}
 
-
-
+	// 初始化默认属性集
+	InitializeDefualtAttributes();
 }

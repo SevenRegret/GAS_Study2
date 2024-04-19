@@ -53,6 +53,7 @@ public:
 	void SetWidgetControllerParams(const FWidgetControllerParams WCParams);
 
 	// 广播初始化值
+	UFUNCTION(BlueprintCallable)
 	virtual void BroadcastInitialValues();
 
 	// 绑定委托回调

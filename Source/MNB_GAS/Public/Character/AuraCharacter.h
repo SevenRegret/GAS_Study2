@@ -20,6 +20,9 @@ public:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
 
+
+	// ’Ω∂∑œ‡πÿ
+	virtual int32 GetPlayerLevel() override;
 private:
-	void InitAbilityInfo();
+	virtual void InitAbilityActorInfo() override;
 };

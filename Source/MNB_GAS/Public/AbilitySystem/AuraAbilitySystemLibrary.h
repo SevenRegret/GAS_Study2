@@ -1,0 +1,30 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Kismet/BlueprintFunctionLibrary.h"
+#include "AuraAbilitySystemLibrary.generated.h"
+
+class UOverlayWidgetController;
+class UAttributeMenuWidgetController;
+
+
+/**
+ * 
+ */
+UCLASS()
+class MNB_GAS_API UAuraAbilitySystemLibrary : public UBlueprintFunctionLibrary
+{
+	GENERATED_BODY()
+	
+
+public:
+	// 静态函数无法调用world中的任何Object，因为其类可能不存在，因此静态函数需要一个上下文
+	UFUNCTION(BlueprintPure, Category = "AuraAbilitySystemLibrary|WidgetController")
+	static UOverlayWidgetController* GetOverlayWidgetController(const UObject* WorldContextObject);
+
+	UFUNCTION(BlueprintPure, Category = "AuraAbilitySystemLibrary|WidgetController")
+	static UAttributeMenuWidgetController* GetAttributeMenuWidgetController(const UObject* WorldContextObject);
+
+};
