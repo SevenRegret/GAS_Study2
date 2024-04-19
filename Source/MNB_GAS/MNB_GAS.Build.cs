@@ -20,7 +20,8 @@ public class MNB_GAS : ModuleRules
 		PrivateDependencyModuleNames.AddRange(new string[] { 
 			"GameplayAbilities",
 			"GameplayTags",
-			"GameplayTasks"
+			"GameplayTasks",
+			"NavigationSystem"
 		});
 
 		// Uncomment if you are using Slate UI

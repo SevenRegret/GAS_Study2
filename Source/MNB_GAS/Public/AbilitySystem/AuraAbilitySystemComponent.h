@@ -6,8 +6,10 @@
 #include "AbilitySystemComponent.h"
 #include "AuraAbilitySystemComponent.generated.h"
 
+struct FGameplayTag;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FEffectAssetTags, const FGameplayTagContainer&/*AssetTags*/);
+
 
 
 /**
@@ -24,7 +26,16 @@ public:
 
 	FEffectAssetTags EffectAssetTags;
 
+	// 添加技能组
+	void AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& StartupAbilities);
+
+	// 检测按键何时被释放以及按住
+	void AbilityInputTagHeld(const FGameplayTag& InputTag);
+	void AbilityInputTagReleased(const FGameplayTag& InputTag);
+
 protected:
-	void EffectApplied(UAbilitySystemComponent* AbilitySystemComponent, const FGameplayEffectSpec& EffetSpec,
+	// 客户端也可以调用effectApply
+	UFUNCTION(Client, Reliable)
+	void ClientEffectApplied(UAbilitySystemComponent* AbilitySystemComponent, const FGameplayEffectSpec& EffetSpec,
 		FActiveGameplayEffectHandle ActiveEffectHandle);
 };

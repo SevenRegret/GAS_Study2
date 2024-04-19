@@ -3,11 +3,12 @@
 
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AuraGameplayTags.h"
+#include "AbilitySystem/Abilities/AuraGameplayAbility.h"
 
 void UAuraAbilitySystemComponent::AbilityActorInfoSet()
 {
 	// 委托
-	OnGameplayEffectAppliedDelegateToSelf.AddUObject(this, &UAuraAbilitySystemComponent::EffectApplied);
+	OnGameplayEffectAppliedDelegateToSelf.AddUObject(this, &UAuraAbilitySystemComponent::ClientEffectApplied);
 
 
 	// GameplayTags获取单例
@@ -21,7 +22,80 @@ void UAuraAbilitySystemComponent::AbilityActorInfoSet()
 	//);
 }
 
-void UAuraAbilitySystemComponent::EffectApplied(
+void UAuraAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& StartupAbilities)
+{
+	for (TSubclassOf<UGameplayAbility> AbilityClass : StartupAbilities)
+	{
+		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass, 1);
+
+		// Spec中拿到Ab信息
+		if (const UAuraGameplayAbility* AuraAbility = Cast<UAuraGameplayAbility>(AbilitySpec.Ability))
+		{
+			AbilitySpec.DynamicAbilityTags.AddTag(AuraAbility->StartupInputTag);
+			// 赋予AB
+			GiveAbility(AbilitySpec);
+		}
+	}
+}
+
+void UAuraAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& InputTag)
+{
+	if (!InputTag.IsValid()) return;
+
+	// 从所有已经激活的AB中遍历
+	for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
+	{
+		// 严格匹配InputTag
+		if (AbilitySpec.DynamicAbilityTags.HasTagExact(InputTag))
+		{
+			// 这里仅仅通知Ab，该能力处于一个pressed状态
+			AbilitySpecInputPressed(AbilitySpec);
+
+			if (!AbilitySpec.IsActive())
+			{
+				// 尝试激活AB
+				TryActivateAbility(AbilitySpec.Handle);
+			}
+		}
+	}
+	// 从所有已经激活的AB中遍历
+	/*for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
+		{
+			// 严格匹配InputTag
+			if (AbilitySpec.DynamicAbilityTags.HasTagExact(InputTag))
+			{
+				// 这里仅仅通知Ab，该能力处于一个pressed状态
+				AbilitySpecInputPressed(AbilitySpec);
+
+				if (!AbilitySpec.IsActive())
+				{
+					// 尝试激活AB
+					TryActivateAbility(AbilitySpec.Handle);
+				}
+			}
+		}
+		*/
+
+}
+
+void UAuraAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& InputTag)
+{
+	if (!InputTag.IsValid()) return;
+
+	// 从所有已经激活的AB中遍历
+	for (FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
+	{
+		// 严格匹配InputTag
+		if (AbilitySpec.DynamicAbilityTags.HasTagExact(InputTag))
+		{
+			// 这里仅仅通知Ab，该能力处于一个pressed状态
+			AbilitySpecInputReleased(AbilitySpec);
+		}
+	}
+
+}
+
+void UAuraAbilitySystemComponent::ClientEffectApplied_Implementation(
 	UAbilitySystemComponent* AbilitySystemComponent, 
 	const FGameplayEffectSpec& EffectSpec, 
 	FActiveGameplayEffectHandle ActiveEffectHandle)
