@@ -120,4 +120,60 @@ void FAuraGameplayTags::InitializeNativeGameplayTags()
 		FName("InputTag.4"),
 		FString("...")
 	);
+
+
+	GameplayTags.Damage = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Damage"),
+		FString("...")
+	);
+
+	// 元素伤害
+	GameplayTags.Damage_Fire = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Damage.Fire"),
+		FString("Fire Damage Type")
+	);
+	GameplayTags.Damage_Lighting = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Damage.Lighting"),
+		FString("Lighting Damage Type")
+	);
+	GameplayTags.Damage_Arcane = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Damage.Arcane"),
+		FString("Arcane Damage Type")
+	);
+	GameplayTags.Damage_Physics = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Damage.Physics"),
+		FString("Physics Damage Type")
+	);
+
+	// 元素抗性
+	GameplayTags.Attributes_Resistance_Fire = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Attributes.Resistance.Fire"),
+		FString("...")
+	);
+	GameplayTags.Attributes_Resistance_Lighting = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Attributes.Resistance.Lighting"),
+		FString("...")
+	);
+	GameplayTags.Attributes_Resistance_Arcane = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Attributes.Resistance.Arcane"),
+		FString("...")
+	);
+	GameplayTags.Attributes_Resistance_Physics = UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Attributes.Resistance.Physics"),
+		FString("...")
+	);
+
+
+	/*
+		元素伤害和抗性的映射集合
+	*/
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Fire, GameplayTags.Attributes_Resistance_Fire);
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Arcane, GameplayTags.Attributes_Resistance_Arcane);
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Lighting, GameplayTags.Attributes_Resistance_Lighting);
+	GameplayTags.DamageTypesToResistances.Add(GameplayTags.Damage_Physics, GameplayTags.Attributes_Resistance_Physics);
+
+	GameplayTags.Effects_HitReact= UGameplayTagsManager::Get().AddNativeGameplayTag(
+		FName("Effects.HitReact"),
+		FString("...")
+	);
 }

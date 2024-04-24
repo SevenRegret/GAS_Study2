@@ -5,7 +5,15 @@
 #include "CoreMinimal.h"
 #include "Character/AuraCharacterBase.h"
 #include "Interaction/EnemyInterface.h"
+#include "UI/WidgetController/OverlayWidgetController.h"
+#include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "AuraEnemy.generated.h"
+
+
+class UWidgetComponent;
+class UBehaviorTree;
+class AAuraAIController;
+
 
 /**
  * 
@@ -15,8 +23,10 @@ class MNB_GAS_API AAuraEnemy : public AAuraCharacterBase, public IEnemyInterface
 {
 	GENERATED_BODY()
 
-	AAuraEnemy();
 public:
+	AAuraEnemy();
+
+	virtual void PossessedBy(AController* NewController) override;
 
 	virtual void HighlightActor() override;
 
@@ -26,13 +36,52 @@ public:
 
 	virtual int32 GetPlayerLevel() override;
 
+	virtual void Die() override;
+
+	// 广播生命值变化
+	UPROPERTY(BlueprintAssignable)
+	FOnAttributeChangedSignature OnHealthChanged;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnAttributeChangedSignature OnMaxHealthChanged;
+
+	void HitReactTagChanged(const FGameplayTag CallbackTag, int NewCount);
+
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	bool bHitReacting = false;
+
+	// 基础行走速度
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	float BaseWalkSpeed = 250.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
+	float LifeSpan = 5.f;
+
 protected:
 	virtual void BeginPlay() override;
 	
 	virtual void InitAbilityActorInfo() override;
 
+	virtual void InitializeDefaultAttributes() const override;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Class Defualts")
 	int32 Level = 1;
+
+	// 敌人类默认Class
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Class Defualts")
+	ECharacterClass CharacterClass = ECharacterClass::Warrior;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UWidgetComponent> HealthBar;
+
+
+	// AI
+	UPROPERTY(EditAnywhere, Category = "AI")
+	TObjectPtr<UBehaviorTree> BehaviorTree;
+
+	UPROPERTY()
+	TObjectPtr<AAuraAIController> AuraAIController;
+
 };
 
 	

@@ -12,6 +12,8 @@
 #include "AuraGameplayTags.h"
 #include "NavigationSystem.h"
 #include "NavigationPath.h"
+#include "GameFramework/Character.h"
+#include "UI/Widgets/DamageTextComponent.h"
 
 AAuraPlayerController::AAuraPlayerController()
 {
@@ -48,6 +50,25 @@ void AAuraPlayerController::AutoRun()
 		{
 			bAutoRunning = false;
 		}
+
+	}
+}
+
+void AAuraPlayerController::ShowDamageNumber_Implementation(float DamageAmount, ACharacter* TargetCharacter, bool bBlockedHit, bool bCriticalHit)
+{
+	// 只在发射的那方去显示文本, 检测是否为本地COntroller
+	if (IsValid(TargetCharacter) && DamageTextComponentClass && IsLocalController())
+	{
+		// 拿到damageText组件
+		UDamageTextComponent* DamageText = NewObject<UDamageTextComponent>(TargetCharacter, DamageTextComponentClass);
+		// 之前一直用的是CreateDefault这里换成了注册组件函数
+		DamageText->RegisterComponent();
+		// 添加组件之后会自动播放动画（蓝图中设定的构造函数播放, 保持相对变换（角色受到伤害的位置
+		DamageText->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+		// 然后从组件分离，保持世界坐标
+		DamageText->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+		// 设置伤害数字
+		DamageText->SetDamageText(DamageAmount, bBlockedHit, bCriticalHit);
 
 	}
 }
@@ -89,12 +110,17 @@ void AAuraPlayerController::SetupInputComponent()
 	// move函数绑定
 	AuraInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::Move);
 
+	AuraInputComponent->BindAction(ShiftAction, ETriggerEvent::Started, this, &AAuraPlayerController::ShiftPressed);
+	AuraInputComponent->BindAction(ShiftAction, ETriggerEvent::Completed, this, &AAuraPlayerController::ShiftReleased);
+
 	AuraInputComponent->BindAbilityAction(
 		InputConfig,
 		this,
 		&ThisClass::AbilityInputTagPressed,
 		&ThisClass::AbilityInputTagReleased,
 		&ThisClass::AbilityInputTagHeld);
+
+	
 }
 
 // 自定义移动函数调用, 结构为InputActionValue
@@ -164,15 +190,13 @@ void AAuraPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 		return;
 	}
 
-	// 松开时检测是否有目标
-	if (bTargeting)
+	if (GetAuraASC())
 	{
-		if (GetAuraASC())
-		{
-			GetAuraASC()->AbilityInputTagReleased(InputTag);
-		}
+		GetAuraASC()->AbilityInputTagReleased(InputTag);
 	}
-	else
+
+	// 松开时检测是否有目标
+	if (!bTargeting && !bShiftKeyDown)
 	{
 		const APawn* ControlledPawn = GetPawn();
 
@@ -210,7 +234,7 @@ void AAuraPlayerController::AbilityInputTagHeld(FGameplayTag InputTag)
 		return;
 	}
 
-	if (bTargeting)
+	if (bTargeting || bShiftKeyDown)
 	{
 		if (GetAuraASC())
 		{

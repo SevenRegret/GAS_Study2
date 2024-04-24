@@ -21,7 +21,9 @@ public class MNB_GAS : ModuleRules
 			"GameplayAbilities",
 			"GameplayTags",
 			"GameplayTasks",
-			"NavigationSystem"
+			"NavigationSystem",
+			"Niagara",
+			"AIModule"
 		});
 
 		// Uncomment if you are using Slate UI

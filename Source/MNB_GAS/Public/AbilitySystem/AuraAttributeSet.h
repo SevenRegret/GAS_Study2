@@ -124,8 +124,8 @@ public:
 
 	// 暴击率
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_CriticalHitchance, Category = "Secondary Attributes")
-	FGameplayAttributeData CriticalHitchance;
-	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, CriticalHitchance);
+	FGameplayAttributeData CriticalHitChance;
+	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, CriticalHitChance);
 
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_CriticalHitResistance, Category = "Secondary Attributes")
 	FGameplayAttributeData CriticalHitResistance;
@@ -164,6 +164,35 @@ public:
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MaxMana, Category = "Vital Attributes")
 	FGameplayAttributeData MaxMana;
 	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, MaxMana);
+
+	/*
+		元素抗性
+	*/
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_FireResistance, Category = "Resistance Attributes")
+	FGameplayAttributeData FireResistance;
+	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, FireResistance);
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_LightingResistance, Category = "Resistance Attributes")
+	FGameplayAttributeData LightingResistance;
+	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, LightingResistance);
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_ArcaneResistance, Category = "Resistance Attributes")
+	FGameplayAttributeData ArcaneResistance;
+	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, ArcaneResistance);
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_PhysicsResistance, Category = "Resistance Attributes")
+	FGameplayAttributeData PhysicsResistance;
+	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, PhysicsResistance);
+
+
+
+
+	/*
+		元属性
+	*/
+	UPROPERTY(BlueprintReadOnly, Category = "Meta Attributes")
+	FGameplayAttributeData IncomingDamage;
+	ATTRIBUTE_ACCESSORS(UAuraAttributeSet, IncomingDamage);
 
 
 	UFUNCTION()
@@ -214,8 +243,22 @@ public:
 	UFUNCTION()
 	void OnRep_ManaRegeneration(const FGameplayAttributeData& OldManaRegeneration) const;
 
+	UFUNCTION()
+	void OnRep_FireResistance(const FGameplayAttributeData& OldFireResistance) const;
+
+	UFUNCTION()
+	void OnRep_LightingResistance(const FGameplayAttributeData& OldLightingResistance) const;
+
+	UFUNCTION()
+	void OnRep_ArcaneResistance(const FGameplayAttributeData& OldArcaneResistance) const;
+
+	UFUNCTION()
+	void OnRep_PhysicsResistance(const FGameplayAttributeData& OldPhysicsResistance) const;
 
 private:
 	// 设置GE属性参数
 	void SetEffectProperties(const FGameplayEffectModCallbackData& Data, FEffectProperties& Props) const;
+
+	// 展示伤害数值文本
+	void ShowFloatingText(const FEffectProperties& Props, float Damage, bool bBlockedHit, bool bCriticalHit) const;
 };

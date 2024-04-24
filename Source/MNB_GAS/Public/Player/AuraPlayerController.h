@@ -15,6 +15,7 @@ class UAuraInputConfig;
 class UAuraAbilitySystemComponent;
 
 class USplineComponent;
+class UDamageTextComponent;
 
 /**
  * 
@@ -28,6 +29,10 @@ public:
 	AAuraPlayerController();
 
 	virtual void PlayerTick(float DeltaTime) override;
+
+	// 展示伤害数字
+	UFUNCTION(Client, Reliable)
+	void ShowDamageNumber(float DamageAmount, ACharacter* TargetCharacter, bool bBlockedHit, bool bCriticalHit);
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -40,7 +45,15 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Input");
 	TObjectPtr<UInputAction> MoveAction;
 
+	UPROPERTY(EditAnywhere, Category = "Input");
+	TObjectPtr<UInputAction> ShiftAction;
+
 	void Move(const FInputActionValue& InputActionValue);
+
+	void ShiftPressed() { bShiftKeyDown = true; };
+	void ShiftReleased() { bShiftKeyDown = false; };
+
+	bool bShiftKeyDown = false;
 
 	// 鼠标跟踪
 	void CursorTrace();
@@ -60,6 +73,7 @@ private:
 	TObjectPtr<UAuraInputConfig> InputConfig;
 
 	// 添加一个ASC指针
+	UPROPERTY()
 	TObjectPtr<UAuraAbilitySystemComponent> AuraAbilitySystemComponent;
 
 	UAuraAbilitySystemComponent* GetAuraASC();
@@ -89,4 +103,7 @@ private:
 
 	// 自动奔跑
 	void AutoRun();
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UDamageTextComponent> DamageTextComponentClass;
 };

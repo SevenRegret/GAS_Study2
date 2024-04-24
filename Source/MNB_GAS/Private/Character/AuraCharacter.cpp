@@ -33,6 +33,9 @@ void AAuraCharacter::PossessedBy(AController* NewController)
 void AAuraCharacter::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
+
+	// 客户端调用需要在这里将GAS同步，原理大致gAS的初始化必须调用这个函数来设置否则无效，而客户端就是在这
+	InitAbilityActorInfo();
 }
 
 int32 AAuraCharacter::GetPlayerLevel()
@@ -68,5 +71,5 @@ void AAuraCharacter::InitAbilityActorInfo()
 	}
 
 	// 初始化默认属性集
-	InitializeDefualtAttributes();
+	InitializeDefaultAttributes();
 }

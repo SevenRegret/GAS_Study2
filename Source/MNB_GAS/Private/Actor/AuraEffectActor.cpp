@@ -26,15 +26,8 @@ void AAuraEffectActor::BeginPlay()
 
 void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, TSubclassOf<UGameplayEffect> GameplayEffectClass)
 {
-	// 这是ue库中调用逻辑
-	//IAbilitySystemInterface* ASCInterface = Cast<IAbilitySystemInterface>(Target);
-
-	//// 如果asc接口可以转换, Actor必须继承
-	//if (ASCInterface)
-	//{
-	//	UAbilitySystemComponent ASCInterface->GetAbilitySystemComponent();
-
-	//}
+	// 如果目标有tag为Enemy，并且被设置为不给Enemy叠加
+	if (TargetActor->ActorHasTag(FName("Enemy")) && !bApplyEffectsToEnemies) return;
 
 	// 这里选择直接用系统库
 	UAbilitySystemComponent* TargetASC =  UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor);
@@ -60,10 +53,18 @@ void AAuraEffectActor::ApplyEffectToTarget(AActor* TargetActor, TSubclassOf<UGam
 		// 添加Activehandle对应ASC的映射, 映射用于决定什么时候移除Inifite
 		ActiveEffectHandles.Add(InActiveEffectHandle, TargetASC);
 	}
+
+	if (!bIsInfinite)
+	{
+		Destroy();
+	}
 }
 
 void AAuraEffectActor::OnOverlap(AActor* TargetActor)
 {
+	// 如果目标有tag为Enemy，并且被设置为不给Enemy叠加
+	if (TargetActor->ActorHasTag(FName("Enemy")) && !bApplyEffectsToEnemies) return;
+
 	// 如果 “立即生效的GE” 类型是重叠时应用则，直接添加GE
 	if (InstantEffectApplicationPolicy == EEffectApplicationPolicy::ApplyOnOverlap)
 	{
