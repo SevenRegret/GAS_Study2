@@ -315,5 +315,11 @@ void UAuraAttributeSet::ShowFloatingText(const FEffectProperties& Props, float D
 			// 对伤害的目标角色进行显示数字
 			PC->ShowDamageNumber(Damage, Props.TargetCharacter, bBlockedHit, bCriticalHit);
 		}
+
+		if (AAuraPlayerController* PC =
+			Cast<AAuraPlayerController>(Props.TargetCharacter->Controller))
+		{
+			PC->ShowDamageNumber(Damage, Props.TargetCharacter, bBlockedHit, bCriticalHit);
+		}
 	}
 }

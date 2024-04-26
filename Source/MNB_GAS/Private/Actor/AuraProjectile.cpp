@@ -9,6 +9,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "AbilitySystem/AuraAbilitySystemLibrary.h"
 
 
 // Sets default values
@@ -58,6 +59,7 @@ void AAuraProjectile::Destroyed()
 		{
 			LoopingSoundComponent->Stop();
 		}
+		bHit = true;
 	}
 
 
@@ -66,7 +68,13 @@ void AAuraProjectile::Destroyed()
 
 void AAuraProjectile::OnShpereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (DamageEffectSpecHandle.Data.IsValid() && DamageEffectSpecHandle.Data.Get()->GetContext().GetEffectCauser() == OtherActor)
+	// GESpeHandle数据无效 或者 遇到重叠判定到自身了都推出
+	if (!DamageEffectSpecHandle.Data.IsValid() || DamageEffectSpecHandle.Data.Get()->GetContext().GetEffectCauser() == OtherActor)
+	{
+		return;
+	}
+
+	if (!UAuraAbilitySystemLibrary::IsNotFriend(DamageEffectSpecHandle.Data.Get()->GetContext().GetEffectCauser(), OtherActor))
 	{
 		return;
 	}
@@ -74,6 +82,7 @@ void AAuraProjectile::OnShpereOverlap(UPrimitiveComponent* OverlappedComponent, 
 	// 如果没播放过（防止客户端服务端双重播放
 	if (!bHit)
 	{
+		//UE_LOG()
 		// 碰撞到物体时，播放声音和特效
 		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation(), FRotator::ZeroRotator);
 
@@ -83,9 +92,10 @@ void AAuraProjectile::OnShpereOverlap(UPrimitiveComponent* OverlappedComponent, 
 		{
 			LoopingSoundComponent->Stop();
 		}
+		bHit = true;
 	}
-	
 
+	
 	if (HasAuthority())
 	{
 		// 通过OtherActor拿到ASC

@@ -34,6 +34,8 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void Destroyed() override;
+
+
 	
 	UFUNCTION()
 	void OnShpereOverlap(
@@ -45,6 +47,9 @@ protected:
 		const FHitResult& SweepResult
 	);
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<USphereComponent> Sphere;
+
 private:
 	// 弹体生命周期
 	UPROPERTY(EditDefaultsOnly)
@@ -52,8 +57,7 @@ private:
 
 	bool bHit = false;
 
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<USphereComponent> Sphere;
+	
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UNiagaraSystem> ImpactEffect;

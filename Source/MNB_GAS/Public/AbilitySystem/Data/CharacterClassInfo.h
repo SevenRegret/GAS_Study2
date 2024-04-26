@@ -28,6 +28,10 @@ struct FCharacterClassDefaultInfo
 public:
 	UPROPERTY(EditDefaultsOnly, Category = "Class Defaults")
 	TSubclassOf<UGameplayEffect> PrimaryAttribute;
+
+	// 存储GA的集合, 需要游戏开始就欸角色的
+	UPROPERTY(EditDefaultsOnly, Category = "Class Defaults")
+	TArray<TSubclassOf<UGameplayAbility>> StartupAbilities;
 };
 
 /**

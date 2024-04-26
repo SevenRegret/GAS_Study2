@@ -41,7 +41,7 @@ public:
 
 	// 给与初始化的能力到Enemy
 	UFUNCTION(BlueprintCallable, Category = "AuraAbilitySystemLibrary|CharacterClassDefaults")
-	static void GiveStartupAbilities(const UObject* WorldContextObject, UAbilitySystemComponent* ASC);
+	static void GiveStartupAbilities(const UObject* WorldContextObject, UAbilitySystemComponent* ASC, ECharacterClass CharacterClass);
 
 	UFUNCTION(BlueprintCallable, Category = "AuraAbilitySystemLibrary|CharacterClassDefaults")
 	static UCharacterClassInfo* GetCharacterClassInfo(const UObject* WorldContextObject);
@@ -57,4 +57,17 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "AuraAbilitySystemLibrary|GameplayEffects")
 	static void SetIsCriticalHit(FGameplayEffectContextHandle& EffectContextHandle, bool bInisCriticalHit);
+
+	// 获取一定半径范围内的或者的player
+	UFUNCTION(BlueprintCallable, Category = "AuraAbilitySystemLibrary|GameplayEffects")
+	static void GetLivePlayersWithRadius(
+		const UObject* WorldContextObject, 
+		TArray<AActor*>& OutOverlappingActors, 
+		const TArray<AActor*>& ActorsToIgnore,
+		float Radius,
+		const FVector& SphereOrigin);
+
+	// 判断是否同阵营
+	UFUNCTION(BlueprintPure, Category = "AuraAbilitySystemLibrary|GameplayEffects")
+	static bool IsNotFriend(AActor* FirstActor, AActor* SecondActor);
 };
