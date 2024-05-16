@@ -8,6 +8,8 @@
 #include "OverlayWidgetController.generated.h"
 
 class UAuraUserWidget;
+class UAbilityInfo;
+class UAuraAbilitySystemComponent;
 
 USTRUCT(BlueprintType)
 struct FUIWidgetRow : public FTableRowBase
@@ -27,12 +29,16 @@ struct FUIWidgetRow : public FTableRowBase
 	UTexture2D* Image = nullptr;
 };
 
+
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttributeChangedSignature, float, NewValue);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnLevelChangedSignature, int32, NewLevel, bool, bLevelUp);
 
-
-// ÏûÏ¢Í¨ÖªµÄ¶à²¥Î¯ÍĞ
+// æ¶ˆæ¯é€šçŸ¥çš„å¤šæ’­å§”æ‰˜
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMessageWidgetRowSignature, FUIWidgetRow, Row);
+
+
 
 
 /**
@@ -43,7 +49,7 @@ class MNB_GAS_API UOverlayWidgetController : public UAuraWidgetController
 {
 	GENERATED_BODY()
 public:
-	// ¹ã²¥³õÊ¼»¯Öµ
+	// å¹¿æ’­åˆå§‹åŒ–å€¼
 	virtual void BroadcastInitialValues() override;
 
 	virtual void BindCallbacksToDependencies() override;
@@ -64,15 +70,25 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "GAS | Messages")
 	FMessageWidgetRowSignature MessageWidgetRowDelegate;
 
+
+	UPROPERTY(BlueprintAssignable, Category = "GAS | XP")
+	FOnAttributeChangedSignature OnXPPercentChanged;
+
+	UPROPERTY(BlueprintAssignable, Category = "GAS | Level")
+	FOnLevelChangedSignature OnPlayerLevelChangedDelegate;
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Widget Data")
 	TObjectPtr<UDataTable> MessageWidgetDataTable;
 
 
-	// Í¨¹ıÒ»¸öTagµÃµ½Æä¶ÔÓ¦µÄDTRow
+	// é€šè¿‡ä¸€ä¸ªTagå¾—åˆ°å…¶å¯¹åº”çš„DTRow
 	template<typename T>
 	T* GetDataTableRowByTag(UDataTable* DataTable, const FGameplayTag& Tag);
-	
+
+	void OnXPChanged(int32 NewXP);
+
+	void OnAbilityEquipped(const FGameplayTag& AbilityTag, const FGameplayTag& Status, const FGameplayTag& Slot, const FGameplayTag& PreviousSlot) const;
 };
 
 

@@ -14,10 +14,15 @@
 #include "NavigationPath.h"
 #include "GameFramework/Character.h"
 #include "UI/Widgets/DamageTextComponent.h"
+#include "NiagaraFunctionLibrary.h"
+#include "Actor/MagicCircle.h"
+#include "Components/DecalComponent.h"
+#include "MNB_GAS/MNB_GAS.h"
+#include "Interaction/HighlightInterface.h"
 
 AAuraPlayerController::AAuraPlayerController()
 {
-	// ¿É¸´ÖÆActor
+	// å¯å¤åˆ¶Actor
 	bReplicates = true;
 
 	Spline = CreateDefaultSubobject<USplineComponent>("Spline");
@@ -30,6 +35,8 @@ void AAuraPlayerController::PlayerTick(float DeltaTime)
 	CursorTrace();
 
 	AutoRun();
+
+	UpdateMagicCircleLocation();
 }
 
 void AAuraPlayerController::AutoRun()
@@ -44,7 +51,7 @@ void AAuraPlayerController::AutoRun()
 			Spline->FindDirectionClosestToWorldLocation(LocationOnSpline, ESplineCoordinateSpace::World);
 
 		ControllerdPawn->AddMovementInput(Direction);
-		// µ½Ä¿±êµãµÄ¾àÀë
+		// åˆ°ç›®æ ‡ç‚¹çš„è·ç¦»
 		const float DistanceToDestination = (LocationOnSpline - CachedDestination).Length();
 		if (DistanceToDestination <= AutoRunAcceptanceRadius)
 		{
@@ -54,21 +61,50 @@ void AAuraPlayerController::AutoRun()
 	}
 }
 
+void AAuraPlayerController::UpdateMagicCircleLocation()
+{
+	if (IsValid(MagicCircle))
+	{
+		MagicCircle->SetActorLocation(CursorHit.ImpactPoint);
+	}
+}
+
 void AAuraPlayerController::ShowDamageNumber_Implementation(float DamageAmount, ACharacter* TargetCharacter, bool bBlockedHit, bool bCriticalHit)
 {
-	// Ö»ÔÚ·¢ÉäµÄÄÇ·½È¥ÏÔÊ¾ÎÄ±¾, ¼ì²âÊÇ·ñÎª±¾µØCOntroller
+	// åªåœ¨å‘å°„çš„é‚£æ–¹å»æ˜¾ç¤ºæ–‡æœ¬, æ£€æµ‹æ˜¯å¦ä¸ºæœ¬åœ°COntroller
 	if (IsValid(TargetCharacter) && DamageTextComponentClass && IsLocalController())
 	{
-		// ÄÃµ½damageText×é¼ş
+		// æ‹¿åˆ°damageTextç»„ä»¶
 		UDamageTextComponent* DamageText = NewObject<UDamageTextComponent>(TargetCharacter, DamageTextComponentClass);
-		// Ö®Ç°Ò»Ö±ÓÃµÄÊÇCreateDefaultÕâÀï»»³ÉÁË×¢²á×é¼şº¯Êı
+		// ä¹‹å‰ä¸€ç›´ç”¨çš„æ˜¯CreateDefaultè¿™é‡Œæ¢æˆäº†æ³¨å†Œç»„ä»¶å‡½æ•°
 		DamageText->RegisterComponent();
-		// Ìí¼Ó×é¼şÖ®ºó»á×Ô¶¯²¥·Å¶¯»­£¨À¶Í¼ÖĞÉè¶¨µÄ¹¹Ôìº¯Êı²¥·Å, ±£³ÖÏà¶Ô±ä»»£¨½ÇÉ«ÊÜµ½ÉËº¦µÄÎ»ÖÃ
+		// æ·»åŠ ç»„ä»¶ä¹‹åä¼šè‡ªåŠ¨æ’­æ”¾åŠ¨ç”»ï¼ˆè“å›¾ä¸­è®¾å®šçš„æ„é€ å‡½æ•°æ’­æ”¾, ä¿æŒç›¸å¯¹å˜æ¢ï¼ˆè§’è‰²å—åˆ°ä¼¤å®³çš„ä½ç½®
 		DamageText->AttachToComponent(TargetCharacter->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-		// È»ºó´Ó×é¼ş·ÖÀë£¬±£³ÖÊÀ½ç×ø±ê
+		// ç„¶åä»ç»„ä»¶åˆ†ç¦»ï¼Œä¿æŒä¸–ç•Œåæ ‡
 		DamageText->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-		// ÉèÖÃÉËº¦Êı×Ö
+		// è®¾ç½®ä¼¤å®³æ•°å­—
 		DamageText->SetDamageText(DamageAmount, bBlockedHit, bCriticalHit);
+
+	}
+}
+
+void AAuraPlayerController::ShowMagicCircle(UMaterialInterface* DecalMaterial)
+{
+	if (!IsValid(MagicCircle))
+	{
+		MagicCircle = GetWorld()->SpawnActor<AMagicCircle>(MagicCircleClass);
+		if (DecalMaterial)
+		{
+			MagicCircle->MagicCircleDecal->SetMaterial(0, DecalMaterial);
+		}
+	}
+}
+
+void AAuraPlayerController::HideMagicCircle()
+{
+	if (IsValid(MagicCircle))
+	{
+		MagicCircle->Destroy();
 
 	}
 }
@@ -77,7 +113,7 @@ void AAuraPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// begin¼ì²éContext
+	// beginæ£€æŸ¥Context
 	check(AuraContext);
 
 	UEnhancedInputLocalPlayerSubsystem* Subsystem =
@@ -88,11 +124,11 @@ void AAuraPlayerController::BeginPlay()
 		Subsystem->AddMappingContext(AuraContext, 0);
 	}
 
-	//Êó±êÏÔÊ¾
+	//é¼ æ ‡æ˜¾ç¤º
 	bShowMouseCursor = true;
 	DefaultMouseCursor = EMouseCursor::Default;
 
-	// ÉèÖÃÊäÈëÄ£Ê½Ï¸½ÚĞÅÏ¢
+	// è®¾ç½®è¾“å…¥æ¨¡å¼ç»†èŠ‚ä¿¡æ¯
 	FInputModeGameAndUI InputModeData;
 	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	InputModeData.SetHideCursorDuringCapture(false);
@@ -103,16 +139,17 @@ void AAuraPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
-	// ÔöÇ¿×é¼şÊäÈëÉèÖÃÎª½ÇÉ«×Ô´øµÄInputComponent
+	// å¢å¼ºç»„ä»¶è¾“å…¥è®¾ç½®ä¸ºè§’è‰²è‡ªå¸¦çš„InputComponent
 	UAuraInputComponent* AuraInputComponent = CastChecked<UAuraInputComponent>(InputComponent);
 
 
-	// moveº¯Êı°ó¶¨
+	// moveå‡½æ•°ç»‘å®š
 	AuraInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAuraPlayerController::Move);
 
 	AuraInputComponent->BindAction(ShiftAction, ETriggerEvent::Started, this, &AAuraPlayerController::ShiftPressed);
 	AuraInputComponent->BindAction(ShiftAction, ETriggerEvent::Completed, this, &AAuraPlayerController::ShiftReleased);
 
+	// InputConfigä¸­å¡«å†™æ‰€æœ‰æŠ€èƒ½è¾“å…¥çš„å¯¹åº”æŒ‡ä»¤ï¼Œä¸ºæ¯ä¸ªæŒ‡ä»¤ç»‘å®šè¾“å…¥äº‹ä»¶
 	AuraInputComponent->BindAbilityAction(
 		InputConfig,
 		this,
@@ -123,24 +160,23 @@ void AAuraPlayerController::SetupInputComponent()
 	
 }
 
-// ×Ô¶¨ÒåÒÆ¶¯º¯Êıµ÷ÓÃ, ½á¹¹ÎªInputActionValue
+// è‡ªå®šä¹‰ç§»åŠ¨å‡½æ•°è°ƒç”¨, ç»“æ„ä¸ºInputActionValue
 void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 {
-	// ÖáÏòÁ¿
+	// è½´å‘é‡
 	const FVector2D InputAxisVector = InputActionValue.Get<FVector2D>();
-	// Ğı×ªÁ½
+	// æ—‹è½¬ä¸¤
 	const FRotator Rotation = GetControlRotation();
-	// »ñÈ¡yawµÄĞı×ª
+	// è·å–yawçš„æ—‹è½¬
 	const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
 
-	// ¼ÆËãÏòÇ°ÏòÓÒ
+	// è®¡ç®—å‘å‰å‘å³
 	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-	// ¼ìÑépawnµÄÓĞĞ§
 	if (APawn* ControllorPawn = GetPawn<APawn>())
 	{
-		// Ìí¼ÓÏòÇ°¡¢ÏòÓÒµÄÒÆ¶¯ÊäÈëvalueÖµ¡£
+		// æ·»åŠ å‘å‰ã€å‘å³çš„ç§»åŠ¨è¾“å…¥valueå€¼ã€‚
 		ControllorPawn->AddMovementInput(ForwardDirection, InputAxisVector.Y);
 		ControllorPawn->AddMovementInput(RightDirection, InputAxisVector.X);
 	}
@@ -148,39 +184,95 @@ void AAuraPlayerController::Move(const FInputActionValue& InputActionValue)
 
 void AAuraPlayerController::CursorTrace()
 {
-	GetHitResultUnderCursor(ECC_Visibility, false, CursorHit);
+	if (GetAuraASC() && GetAuraASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_CursorTrace))
+	{
+		UnHightlightActor(LastActor);
+		UnHightlightActor(ThisActor);
+		LastActor = nullptr;
+		ThisActor = nullptr;
+		return;
+	}
 
-	// Èç¹û¹â±ê×è¶Ï
+	const ECollisionChannel TraceChannel = IsValid(MagicCircle) ? ECC_ExcludePlayers : ECC_Visibility;
+
+	GetHitResultUnderCursor(TraceChannel, false, CursorHit);
+
+	// å¦‚æœå…‰æ ‡æ²¡æœ‰æ ¹æ®å“åº”çš„channleæ£€æµ‹åˆ°ç¢°æ’ï¼Œé€šè¿‡ä¸åŒçš„Channelæ¥é˜»æ–­ä¸åº”è§¦å‘çš„Actorç±»åˆ«
 	if (!CursorHit.bBlockingHit) return;
 
-	// ÉÏÒ»Ö¡
+	// ä¸Šä¸€å¸§
 	LastActor = ThisActor;
-	// µ±Ç°Ö¡, »ñÈ¡µ½Actor
-	ThisActor = Cast<IEnemyInterface>(CursorHit.GetActor());
+	// å½“å‰å¸§, è·å–åˆ°Actor
 	
-	// ¸ßÁÁActorÂß¼­
-	// Èç¹ûÉÏÒ»Ö¡Ö¸ÏòAcotrÎª¿Õ
+	if (IsValid(CursorHit.GetActor()) && CursorHit.GetActor()->Implements<UHighlightInterface>())
+	{
+		ThisActor = CursorHit.GetActor();
+	}
+	else
+	{
+		ThisActor = nullptr;
+	}
+	
+	// æ¸…é™¤ä¸Šä¸€å¸§ä»¥åŠå½“å‰å¸§çš„é«˜äº®æ˜¾ç¤º
 	if (LastActor != ThisActor)
 	{
-		if (LastActor) LastActor->UnHighlightActor();
-		if (ThisActor) ThisActor->HighlightActor();
+		UnHightlightActor(LastActor);
+		HightlightActor(ThisActor);
+	}
+}
+
+void AAuraPlayerController::HightlightActor(AActor* InActor)
+{
+	if (IsValid(InActor) && InActor->Implements<UHighlightInterface>())
+	{
+		IHighlightInterface::Execute_HighlightActor(InActor);
+	}
+}
+
+void AAuraPlayerController::UnHightlightActor(AActor* InActor)
+{
+	if (IsValid(InActor) && InActor->Implements<UHighlightInterface>())
+	{
+		IHighlightInterface::Execute_UnHighlightActor(InActor);
 	}
 }
 
 void AAuraPlayerController::AbilityInputTagPressed(FGameplayTag InputTag)
 {
-	// ¸ÃAcotrÊÇ·ñÓĞĞ§
+	// Player_Block_InputPressedï¼Œé€šè¿‡è¯¥è‡ªå®šä¹‰çš„Tagæ¥é˜»æ–­Pressedè¾“å…¥
+	if (GetAuraASC() && GetAuraASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_InputPressed))
+	{
+		return;
+	}
+
+	// é¼ æ ‡å·¦é”®ç‰¹æ®Šåˆ¤æ–­
 	if (InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
 	{
-	// 1.ÊäÈë½øÀ´ºó£¬Èç¹ûÊ±Êó±ê×ó¼ü£¬ÅĞ¶ÏÊÇ·ñ×Ô¶¯Ñ°Â·
-		bTargeting = ThisActor ? true : false;
-		bAutoRunning = false;
+	// 1.è¾“å…¥è¿›æ¥åï¼Œå¦‚æœæ—¶é¼ æ ‡å·¦é”®ï¼Œåˆ¤æ–­æ˜¯å¦è‡ªåŠ¨å¯»è·¯(å…ˆåˆ¤æ–­ç„å‡†çš„æ˜¯å¦ä¸ºæ•Œäºº
+		if (IsValid(ThisActor))
+		{
+			TargetingStatus = ThisActor->Implements<UEnemyInterface>() ? ETargetingStatus::TargetingEnemy : ETargetingStatus::TargetingNonEnemy;
+			bAutoRunning = false;
+		}
+		else
+		{
+			TargetingStatus = ETargetingStatus::NotTargeting;
+		}
+	}
+	if (GetAuraASC())
+	{
+		GetAuraASC()->AbilityInputTagPressed(InputTag);
 	}
 	
 }
 
 void AAuraPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 {
+	if (GetAuraASC() && GetAuraASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_InputReleased))
+	{
+		return;
+	}
+
 	if (!InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
 	{
 		if (GetAuraASC())
@@ -195,14 +287,24 @@ void AAuraPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 		GetAuraASC()->AbilityInputTagReleased(InputTag);
 	}
 
-	// ËÉ¿ªÊ±¼ì²âÊÇ·ñÓĞÄ¿±ê
-	if (!bTargeting && !bShiftKeyDown)
+	// æ¾å¼€æ—¶æ£€æµ‹æ˜¯å¦æœ‰ç›®æ ‡
+	if (TargetingStatus != ETargetingStatus::TargetingEnemy && !bShiftKeyDown)
 	{
 		const APawn* ControlledPawn = GetPawn();
 
-		// Èç¹û¸úËæÊÂ¼şÊôÓÚ¶Ì°´ÅĞ¶¨½çÏŞÄÚ
+		// å¦‚æœè·Ÿéšäº‹ä»¶å±äºçŸ­æŒ‰åˆ¤å®šç•Œé™å†…
 		if (FollowTime <= ShortPressThreshold && ControlledPawn)
 		{
+			// ç¼“å­˜éœ€è¦å‰å¾€çš„ç›®æ ‡ç‚¹
+			if (IsValid(ThisActor) && ThisActor->Implements<UHighlightInterface>())
+			{
+				IHighlightInterface::Execute_SetMoveToLocation(ThisActor, CachedDestination);
+			}
+			else if (GetAuraASC() && !GetAuraASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_InputPressed))
+			{
+				UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ClickNiagaraSystem, CachedDestination);
+			}
+
 			if (UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(
 				this,
 				ControlledPawn->GetActorLocation(),
@@ -220,15 +322,21 @@ void AAuraPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 					bAutoRunning = true;
 				}
 			}
+		
 		}
 		FollowTime = 0.f;
-		bTargeting = false;
+		TargetingStatus = ETargetingStatus::NotTargeting;
 	}
 }
 
 void AAuraPlayerController::AbilityInputTagHeld(FGameplayTag InputTag)
 {
-	// 1. ×ó¼üÑ°Â·¼ì²â
+	if (GetAuraASC() && GetAuraASC()->HasMatchingGameplayTag(FAuraGameplayTags::Get().Player_Block_InputHeld))
+	{
+		return;
+	}
+
+	// 1. å·¦é”®å¯»è·¯æ£€æµ‹
 	if (!InputTag.MatchesTagExact(FAuraGameplayTags::Get().InputTag_LMB))
 	{
 		if (GetAuraASC())
@@ -238,26 +346,26 @@ void AAuraPlayerController::AbilityInputTagHeld(FGameplayTag InputTag)
 		return;
 	}
 
-	if (bTargeting || bShiftKeyDown)
+	if (TargetingStatus == ETargetingStatus::TargetingEnemy || bShiftKeyDown)
 	{
 		if (GetAuraASC())
 		{
 			GetAuraASC()->AbilityInputTagHeld(InputTag);
 		}
 	}
-	// Ã»ÓĞÃé×¼Ä¿±ê
+	// æ²¡æœ‰ç„å‡†ç›®æ ‡
 	else
 	{
 		FollowTime += GetWorld()->GetDeltaSeconds();
 
-		// ÃüÖĞ½á¹û¼ì²â, »ñÈ¡ĞèÒª×·×ÙµÄÄ¿±ê
+		// å‘½ä¸­ç»“æœæ£€æµ‹, è·å–éœ€è¦è¿½è¸ªçš„ç›®æ ‡
 		if (CursorHit.bBlockingHit)
 		{
-			// ÃüÖĞµã»º´æÎªCachedDestination
+			// å‘½ä¸­ç‚¹ç¼“å­˜ä¸ºCachedDestination
 			CachedDestination = CursorHit.ImpactPoint;
 		}
 
-		// Ïò×ÅÄ¿±ê³ö·¢
+		// å‘ç€ç›®æ ‡å‡ºå‘
 		if (APawn* ControlledPawn = GetPawn())
 		{
 			const FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();

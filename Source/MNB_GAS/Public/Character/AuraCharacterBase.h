@@ -8,12 +8,18 @@
 #include "Interaction/CombatInterface.h"
 #include "AuraCharacterBase.generated.h"
 
+
+
 class UAttributeSet;
 class UAbilitySystemComponent;
 class UGameplayEffect;
 class UGameplayAbility;
 class UAnimMontage;
 class UNiagaraSystem;
+class UDebuffNiagaraComponent;
+class UPassiveNiagaraComponent;
+
+
 
 UCLASS()
 class MNB_GAS_API AAuraCharacterBase : public ACharacter, public IAbilitySystemInterface, public ICombatInterface
@@ -27,11 +33,15 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	UAttributeSet* GetAttributeSet() const { return AttributeSet; }
 
+	// 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 
+	// ä¼¤å®³
+	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
-	// ´´½¨¶à²¥ÓÃÓÚ´¦ÀíËÀÍö
+	// åˆ›å»ºå¤šæ’­ç”¨äºå¤„ç†æ­»äº¡
 	UFUNCTION(NetMulticast, Reliable)
-	virtual void MulticastHandleDeath();
+	virtual void MulticastHandleDeath(const FVector& DeathImpulse);
 
 	// montageTag
 	UPROPERTY(EditAnywhere, Category = "Combat")
@@ -41,15 +51,17 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	virtual void Tick(float DeltaTime) override;
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
 	TObjectPtr<USkeletalMeshComponent> Weapon;
 
-	// ÎäÆ÷ÌáÊ¾socket
+	// æ­¦å™¨æç¤ºsocket
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	FName WeaponTipSocketName;
 	
-	// ²»Í¬½ÇÉ«ÅäÖÃ²»Í¬µÄÎäÆ÷socket,¿ÉÄÜÓÃµ½×óÓÒÊÖsocket
+	// ä¸åŒè§’è‰²é…ç½®ä¸åŒçš„æ­¦å™¨socket,å¯èƒ½ç”¨åˆ°å·¦å³æ‰‹socket
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	FName LeftHandSocketName;
 
@@ -61,10 +73,10 @@ protected:
 
 
 	/*
-	* Õ½¶·½Ó¿ÚÊµÏÖ
+	* æˆ˜æ–—æ¥å£å®ç°ï¼Œå¤šæ•°æ—¶Enemyç”¨åˆ°çš„
 	*/
 	virtual UAnimMontage* GetHitReactMontage_Implementation() override;
-	virtual void Die() override;
+	virtual void Die(const FVector& DeathImpulse) override;
 	virtual AActor* GetAvatar_Implementation() override;
 	virtual bool IsDead_Implementation() const override;
 	virtual FVector GetCombatSocketLocation_Implementation(const FGameplayTag& MontageTag) override;
@@ -73,13 +85,28 @@ protected:
 	virtual FTaggedMontage GetTaggedMontageByTag_Implementation(const FGameplayTag& MontageTag);
 	virtual int32 GetMinionCount_Implementation() override;
 	virtual void IncrementMinionCount_Implementation(int32 Amount) override;
+	virtual ECharacterClass GetCharacterClass_Implementation() override;
+	virtual FOnASCRegistered GetOnASCRegisteredDelegate() override;
+	//virtual FOnDeath GetOnDeathDelegate() override;
+	virtual FOnDeathSignature& GetOnDeathDelegate() override;
+	virtual USkeletalMeshComponent* GetWeapon_Implementation() override;
+	virtual bool IsBeingShockLoop_Implementation() const;
+	virtual void SetBeingShockLoop_Implementation(bool bInShock) override;
+	virtual FOnDamageSignature& GetOnDamageSignature() override;
 	bool bDeath = false;
 
-	/** Õ½¶·½Ó¿ÚÊµÏÖ **/
+	/** æˆ˜æ–—æ¥å£å®ç° **/
 
 
+	/*
+	* å§”æ‰˜
+	*/
+	FOnASCRegistered OnAscRegistered;
+	FOnDeathSignature OnDeathDelegate;
+	FOnDamageSignature OnDamageDelegate;
 
-	UPROPERTY()
+
+	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 
 	UPROPERTY()
@@ -96,21 +123,21 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Attributes")
 	TSubclassOf<UGameplayEffect> DefualtVitalAttributes;
 
-	// ³õÊ¼»¯DefaultÊôĞÔ¼¯£¬ĞèÒª¶¨ÒåÎªĞéº¯Êı£¬Íæ¼ÒºÍEnemyÊµÏÖ²»Í¬µÄÂß¼­
+	// åˆå§‹åŒ–Defaultå±æ€§é›†ï¼Œéœ€è¦å®šä¹‰ä¸ºè™šå‡½æ•°ï¼Œç©å®¶å’ŒEnemyå®ç°ä¸åŒçš„é€»è¾‘
 	virtual void InitializeDefaultAttributes() const;
 
-	// ½«GEĞ§¹û³õÊ¼»¯×ÔÉí
+	// å°†GEæ•ˆæœåˆå§‹åŒ–è‡ªèº«
 	void ApplyEffectToSelf(TSubclassOf<UGameplayEffect> GameplayEffectClass, float Level) const;
 
 	void AddCharacterAbilities();
 
 
 	/*
-	* ÈÜ½âÌØĞ§£¨ËÀÍö²¥·Å
+	* æº¶è§£ç‰¹æ•ˆï¼ˆæ­»äº¡æ’­æ”¾
 	*/
 	void Dissolve();
 
-	// ĞèÒªÔÚÀ¶Í¼ÖĞÊµÏÖ¾ßÌå·½·¨
+	// éœ€è¦åœ¨è“å›¾ä¸­å®ç°å…·ä½“æ–¹æ³•
 	UFUNCTION(BlueprintImplementableEvent)
 	void StartDissolveTimeline(UMaterialInstanceDynamic* DynamicMaterialInstance);
 
@@ -130,15 +157,69 @@ protected:
 	USoundBase* DeathSound;
 
 	/* Minions */
-	// ÕÙ»½ÊıÁ¿
+	// å¬å”¤æ•°é‡
 	int32 MinionCount = 0;
 
+
+	// æ•Œäººç±»é»˜è®¤Class
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Class Defualts")
+	ECharacterClass CharacterClass = ECharacterClass::Warrior;
+
+	// debuffç»„ä»¶ï¼Œè¿™é‡Œè®¾ç½®ä¸ºç‡ƒçƒ§ç±»
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UDebuffNiagaraComponent> BurnDebuffComponent;
+
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UDebuffNiagaraComponent> StunDebuffComponent;
+
+
+	// Stun çœ©æ™•
+	UPROPERTY(ReplicatedUsing = OnRep_Stunned, BlueprintReadOnly)
+	bool bIsStunned = false;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Burned, BlueprintReadOnly)
+	bool bIsBurned = false;
+
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	bool bIsBeingShocked = false;
+
+	
+
+	virtual void StunTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
+	float BaseWalkSpeed = 600.f;
+
+
+	UFUNCTION()
+	virtual void OnRep_Stunned();
+
+	UFUNCTION()
+	virtual void OnRep_Burned();
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Abilities")
 	TArray<TSubclassOf<UGameplayAbility>> StartupAbilities;
 
-	// ÓÃÓÚÕ¹Ê¾ÊÜ»÷Ê± µÄ¶¯»­×ÊÔ´
+	UPROPERTY(EditAnywhere, Category = "Abilities")
+	TArray<TSubclassOf<UGameplayAbility>> StartupPassiveAbilities;
+
+	// ç”¨äºå±•ç¤ºå—å‡»æ—¶ çš„åŠ¨ç”»èµ„æº
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	TObjectPtr<UAnimMontage> HitReactMontage;
+
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UPassiveNiagaraComponent> HaloOfProjectionNiagaraComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UPassiveNiagaraComponent> LifeSiphonNiagaraComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UPassiveNiagaraComponent> ManaSiphonNiagaraComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<USceneComponent> EffectAttachComponent;
 };

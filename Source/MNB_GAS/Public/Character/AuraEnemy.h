@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Character/AuraCharacterBase.h"
 #include "Interaction/EnemyInterface.h"
+#include "Interaction/HighlightInterface.h"
 #include "UI/WidgetController/OverlayWidgetController.h"
 #include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "AuraEnemy.generated.h"
@@ -19,7 +20,7 @@ class AAuraAIController;
  * 
  */
 UCLASS()
-class MNB_GAS_API AAuraEnemy : public AAuraCharacterBase, public IEnemyInterface
+class MNB_GAS_API AAuraEnemy : public AAuraCharacterBase, public IEnemyInterface, public IHighlightInterface
 {
 	GENERATED_BODY()
 
@@ -28,20 +29,25 @@ public:
 
 	virtual void PossessedBy(AController* NewController) override;
 
-	virtual void HighlightActor() override;
+	/*   Highlightæ¥å£ */
+	virtual void HighlightActor_Implementation() override;
+	virtual void UnHighlightActor_Implementation() override;
+	virtual void SetMoveToLocation_Implementation(FVector& OutDestination) override;
+	/*   Highlightæ¥å£ */
 
-	virtual void UnHighlightActor() override;
+	
+	/*   Combatæ¥å£*/
+	virtual int32 GetPlayerLevel_Implementation() override;
 
-	// Õ½¶·½Ó¿Ú
-
-	virtual int32 GetPlayerLevel() override;
-
-	virtual void Die() override;
+	virtual void Die(const FVector& DeathImpulse) override;
 
 	virtual void SetCombatTarget_Implementation(AActor* InCombatTarget) override;
 	virtual AActor* GetCombatTarget_Implementation() const override;
 
-	// ¹ã²¥ÉúÃüÖµ±ä»¯
+	/*   Combatæ¥å£*/
+
+
+	// å¹¿æ’­ç”Ÿå‘½å€¼å˜åŒ–
 	UPROPERTY(BlueprintAssignable)
 	FOnAttributeChangedSignature OnHealthChanged;
 
@@ -53,14 +59,11 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Combat")
 	bool bHitReacting = false;
 
-	// »ù´¡ĞĞ×ßËÙ¶È
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
-	float BaseWalkSpeed = 250.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
 	float LifeSpan = 5.f;
 	
-	// ´æ´¢Ò»¸öÕ½¶·Ä¿±êµÄActor
+	// å­˜å‚¨ä¸€ä¸ªæˆ˜æ–—ç›®æ ‡çš„Actor
 	UPROPERTY(BlueprintReadWrite, Category = "Combat")
 	TObjectPtr<AActor> CombatTarget;
 
@@ -71,12 +74,9 @@ protected:
 
 	virtual void InitializeDefaultAttributes() const override;
 
+	virtual void StunTagChanged(const FGameplayTag CallbackTag, int32 NewCount) override;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Class Defualts")
 	int32 Level = 1;
-
-	// µĞÈËÀàÄ¬ÈÏClass
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character Class Defualts")
-	ECharacterClass CharacterClass = ECharacterClass::Warrior;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UWidgetComponent> HealthBar;

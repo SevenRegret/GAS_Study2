@@ -10,13 +10,21 @@
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
-class IEnemyInterface;
+class IHighlightInterface;
 class UAuraInputConfig;
 class UAuraAbilitySystemComponent;
 
 class USplineComponent;
 class UDamageTextComponent;
+class UNiagaraSystem;
+class AMagicCircle;
 
+enum class ETargetingStatus : uint8
+{
+	TargetingEnemy,
+	TargetingNonEnemy,
+	NotTargeting
+};
 /**
  * 
  */
@@ -30,15 +38,21 @@ public:
 
 	virtual void PlayerTick(float DeltaTime) override;
 
-	// Õ¹Ê¾ÉËº¦Êı×Ö
+	// å±•ç¤ºä¼¤å®³æ•°å­—
 	UFUNCTION(Client, Reliable)
 	void ShowDamageNumber(float DamageAmount, ACharacter* TargetCharacter, bool bBlockedHit, bool bCriticalHit);
+
+	UFUNCTION(BlueprintCallable)
+	void ShowMagicCircle(UMaterialInterface* DecalMaterial = nullptr);
+
+	UFUNCTION(BlueprintCallable)
+	void HideMagicCircle();
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 
 private:
-	// ControllerÖĞ´´½¨Ò»¸öÖ¸ÕëÖ¸ÏòIMC
+	// Controllerä¸­åˆ›å»ºä¸€ä¸ªæŒ‡é’ˆæŒ‡å‘IMC
 	UPROPERTY(EditAnywhere, Category = "Input");
 	TObjectPtr<UInputMappingContext> AuraContext;
 
@@ -55,16 +69,19 @@ private:
 
 	bool bShiftKeyDown = false;
 
-	// Êó±ê¸ú×Ù
+	// é¼ æ ‡è·Ÿè¸ª
 	void CursorTrace();
 
 
-	IEnemyInterface* LastActor;
-	IEnemyInterface* ThisActor;
+	TObjectPtr<AActor> LastActor;
+	TObjectPtr<AActor> ThisActor;
 
 	FHitResult CursorHit;
 
-	// ABInputÈı¸öº¯Êı
+	static void HightlightActor(AActor* InActor);
+	static void UnHightlightActor(AActor* InActor);
+
+	// ABInputä¸‰ä¸ªå‡½æ•°
 	void AbilityInputTagPressed(FGameplayTag InputTag);
 	void AbilityInputTagReleased(FGameplayTag InputTag);
 	void AbilityInputTagHeld(FGameplayTag InputTag);
@@ -72,7 +89,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Input");
 	TObjectPtr<UAuraInputConfig> InputConfig;
 
-	// Ìí¼ÓÒ»¸öASCÖ¸Õë
+	// æ·»åŠ ä¸€ä¸ªASCæŒ‡é’ˆ
 	UPROPERTY()
 	TObjectPtr<UAuraAbilitySystemComponent> AuraAbilitySystemComponent;
 
@@ -80,30 +97,44 @@ private:
 
 
 	/// <summary>
-	/// ÊµÏÖÊó±êµã»÷½ÇÉ«ÒÆ¶¯ÖÁÄ¿±êµØµã
+	/// å®ç°é¼ æ ‡ç‚¹å‡»è§’è‰²ç§»åŠ¨è‡³ç›®æ ‡åœ°ç‚¹
 	/// 
 	/// </summary>
 
-	// Ä¿±ê·½Ïò
+	// ç›®æ ‡æ–¹å‘
 	FVector CachedDestination = FVector::ZeroVector;
-	// ¸ú×ÙÊó±êµÄÊÂ¼ş
+	// è·Ÿè¸ªé¼ æ ‡çš„äº‹ä»¶
 	float  FollowTime = 0.f;
-	// ¶Ì°´Êó±êµÄÅĞ¶¨½çÏŞ
+	// çŸ­æŒ‰é¼ æ ‡çš„åˆ¤å®šç•Œé™
 	float ShortPressThreshold = 0.5f;
-	// ×Ô¶¯ÔËĞĞ(×Ô¶¯¸ú×ÙµÄÅĞ¶¨Á¿
+	// è‡ªåŠ¨è¿è¡Œ(è‡ªåŠ¨è·Ÿè¸ªçš„åˆ¤å®šé‡
 	bool bAutoRunning = false;
-	// ÊÇ·ñÕıÔÚÃé×¼Ä³¸öÄ¿±ê£¿
-	bool bTargeting = false;
-	// ×Ô¶¯±¼ÅÜµÄ°ë¾¶·¶Î§
+
+	// æ˜¯å¦æ­£åœ¨ç„å‡†æŸä¸ªç›®æ ‡ï¼Ÿ
+	ETargetingStatus TargetingStatus = ETargetingStatus::NotTargeting;
+
+	// è‡ªåŠ¨å¥”è·‘çš„åŠå¾„èŒƒå›´
 	UPROPERTY(EditDefaultsOnly)
 	float AutoRunAcceptanceRadius = 50.f;
-	// ×Ô¶¯±¼ÅÜµÄÏßÌõÑùÊ½
+	// è‡ªåŠ¨å¥”è·‘çš„çº¿æ¡æ ·å¼
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<USplineComponent> Spline;
 
-	// ×Ô¶¯±¼ÅÜ
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UNiagaraSystem> ClickNiagaraSystem;
+
+	// è‡ªåŠ¨å¥”è·‘
 	void AutoRun();
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UDamageTextComponent> DamageTextComponentClass;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AMagicCircle> MagicCircleClass;
+
+	UPROPERTY()
+	TObjectPtr<AMagicCircle> MagicCircle;
+
+
+	void UpdateMagicCircleLocation();
 };

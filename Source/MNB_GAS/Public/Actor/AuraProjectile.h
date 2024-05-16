@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GameplayEffectTypes.h"
+#include "AuraAbilityTypes.h"
 #include "AuraProjectile.generated.h"
 
 class USphereComponent;
@@ -12,6 +13,7 @@ class UProjectileMovementComponent;
 class UNiagaraSystem;
 class USoundBase;
 class UAudioComponent;
+
 
 UCLASS()
 class MNB_GAS_API AAuraProjectile : public AActor
@@ -22,23 +24,28 @@ public:
 	// Sets default values for this actor's properties
 	AAuraProjectile();
 
-	// µ¯ÌåÒÆ¶¯×é¼þ
+	// å¼¹ä½“ç§»åŠ¨ç»„ä»¶
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
 
 
 	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
-	FGameplayEffectSpecHandle DamageEffectSpecHandle;
+	FDamageEffectParams DamageEffectParams;
+
+
+	UPROPERTY()
+	TObjectPtr<USceneComponent> HomingTargetSceneComponent;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	virtual void Destroyed() override;
 
-
+	UFUNCTION(BlueprintCallable)
+	virtual void OnHit();
 	
 	UFUNCTION()
-	void OnShpereOverlap(
+	virtual void OnShpereOverlap(
 		UPrimitiveComponent* OverlappedComponent, 
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, 
@@ -50,14 +57,22 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<USphereComponent> Sphere;
 
-private:
-	// µ¯ÌåÉúÃüÖÜÆÚ
-	UPROPERTY(EditDefaultsOnly)
-	float LifeSpan = 15.f;
+
+	bool IsValidOverlap(AActor* OtherActor);
+
 
 	bool bHit = false;
 
-	
+
+	UPROPERTY()
+	TObjectPtr<UAudioComponent> LoopingSoundComponent;
+
+
+private:
+	// å¼¹ä½“ç”Ÿå‘½å‘¨æœŸ
+	UPROPERTY(EditDefaultsOnly)
+	float LifeSpan = 15.f;
+
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UNiagaraSystem> ImpactEffect;
@@ -65,11 +80,9 @@ private:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<USoundBase> ImpactSound;
 
-	// ·ÉÐÐ¹ý³ÌÖÐÒ»Ö±²¥·Å
+	// é£žè¡Œè¿‡ç¨‹ä¸­ä¸€ç›´æ’­æ”¾
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<USoundBase> LoopingSound;
 
 
-	UPROPERTY()
-	TObjectPtr<UAudioComponent> LoopingSoundComponent;
 };

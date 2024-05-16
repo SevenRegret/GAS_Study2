@@ -3,6 +3,7 @@
 
 #include "AbilitySystem/AbilityTasks/TargetDataUnderMouse.h"
 #include "AbilitySystemComponent.h"
+#include "MNB_GAS/MNB_GAS.h"
 
 UTargetDataUnderMouse* UTargetDataUnderMouse::CreateTargetDataUnderMouse(UGameplayAbility* OwningAbility)
 {
@@ -21,23 +22,23 @@ void UTargetDataUnderMouse::Activate()
 	}
 	else
 	{
-		// ÏÈ¹¹ÔìÒ»¸öhandleºÍÒ»¸öpredictionkey
+		// å…ˆæž„é€ ä¸€ä¸ªhandleå’Œä¸€ä¸ªpredictionkey
 		const FGameplayAbilitySpecHandle SpecHandle = GetAbilitySpecHandle();
 		const FPredictionKey ActivationPredictionKey = GetActivationPredictionKey();
 
-		// ASCÏµÍ³°ó¶¨¸Ãº¯Êý»Øµ÷£¬±ØÒªµÄ²ÎÊýÎªABSpechandleºÍActivatePredictKey
+		// ASCç³»ç»Ÿç»‘å®šè¯¥å‡½æ•°å›žè°ƒï¼Œå¿…è¦çš„å‚æ•°ä¸ºABSpechandleå’ŒActivatePredictKey
 		AbilitySystemComponent.Get()->
 			AbilityTargetDataSetDelegate(SpecHandle, ActivationPredictionKey).
 			AddUObject(this, &UTargetDataUnderMouse::OnTargetDataReplicatedCallback);
 
-		// ÉèÖÃÖ®ºóÈ·±£µ÷ÓÃÎ¯ÍÐ
+		// è®¾ç½®ä¹‹åŽç¡®ä¿è°ƒç”¨å§”æ‰˜
 		const bool bCalledDelegate = 
 			AbilitySystemComponent.Get()->CallReplicatedTargetDataDelegatesIfSet(SpecHandle, ActivationPredictionKey);
 
-		// »¹Ã»µ÷ÓÃ³É¹¦
+		// è¿˜æ²¡è°ƒç”¨æˆåŠŸ
 		if (!bCalledDelegate)
 		{
-			// Í¨Öª·þÎñÆ÷»¹Ã»µ÷ÓÃÎ¯ÍÐ£¬µÈ´ýÔ¶³ÌµÄÍæ¼ÒÊý¾Ý¹ýÀ´
+			// é€šçŸ¥æœåŠ¡å™¨è¿˜æ²¡è°ƒç”¨å§”æ‰˜ï¼Œç­‰å¾…è¿œç¨‹çš„çŽ©å®¶æ•°æ®è¿‡æ¥
 			SetWaitingOnRemotePlayerData();
 		}
 	}
@@ -46,7 +47,7 @@ void UTargetDataUnderMouse::Activate()
 
 }
 
-// ÊäËÍ¹â±êÊý¾Ý
+// è¾“é€å…‰æ ‡æ•°æ®
 void UTargetDataUnderMouse::SendMouseCursorData()
 {
 	FScopedPredictionWindow SCopedPrediction(AbilitySystemComponent.Get());
@@ -54,14 +55,14 @@ void UTargetDataUnderMouse::SendMouseCursorData()
 
 	APlayerController* PC = Ability->GetCurrentActorInfo()->PlayerController.Get();
 	FHitResult CursorHit;
-	PC->GetHitResultUnderCursor(ECC_Visibility, false, CursorHit);
+	PC->GetHitResultUnderCursor(ECC_Target, false, CursorHit);
 
 	FGameplayAbilityTargetDataHandle DataHandle;
 
-	// »÷ÖÐÄ¿±êµÄData
+	// å‡»ä¸­ç›®æ ‡çš„Data
 	FGameplayAbilityTargetData_SingleTargetHit* Data = new FGameplayAbilityTargetData_SingleTargetHit();
 	Data->HitResult = CursorHit;
-	// dataÌí¼Ó¸øDatahandle
+	// dataæ·»åŠ ç»™Datahandle
 	DataHandle.Add(Data);
 
 	FGameplayTag ApplicationTag;
@@ -81,9 +82,9 @@ void UTargetDataUnderMouse::SendMouseCursorData()
 
 void UTargetDataUnderMouse::OnTargetDataReplicatedCallback(const FGameplayAbilityTargetDataHandle& DataHandle, FGameplayTag ActivationTag)
 {
-	// ½ÓÊÕµ½Ä¿±êÊý¾ÝÊ±±»µ÷ÓÃµÄº¯Êý£¬
+	// æŽ¥æ”¶åˆ°ç›®æ ‡æ•°æ®æ—¶è¢«è°ƒç”¨çš„å‡½æ•°ï¼Œ
 
-	// ¸æËß¿Í»§¶ËÒÑ¾­½ÓÊÕ
+	// å‘Šè¯‰å®¢æˆ·ç«¯å·²ç»æŽ¥æ”¶
 	AbilitySystemComponent->ConsumeClientReplicatedTargetData(
 		GetAbilitySpecHandle(),
 		GetActivationPredictionKey());

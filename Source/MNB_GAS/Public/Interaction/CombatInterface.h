@@ -5,11 +5,23 @@
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
 #include "GameplayTagContainer.h"
+#include "AbilitySystem/Data/CharacterClassInfo.h"
 #include "CombatInterface.generated.h"
 
+class UAbilitySystemComponent;
 class UNiagaraSystem;
 
-// ÃÉÌ«ÆæTag½á¹¹£¬ Ò»¸öÃÉÌ«Ææ¼ÓÒ»¸ö¶ÔÓ¦µÄtag
+// ASCæ³¨å†Œå§”æ‰˜
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnASCRegistered, UAbilitySystemComponent*);
+// æ­»äº¡æ—¶å§”æ‰˜  å“ªä¸ªActoræ­»äº¡äº†
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeath, AActor*, DeadActor);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeathSignature, AActor*, DeadActor);
+
+// å—ä¼¤
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnDamageSignature, float);
+
+// è’™å¤ªå¥‡Tagç»“æ„ï¼Œ ä¸€ä¸ªè’™å¤ªå¥‡åŠ ä¸€ä¸ªå¯¹åº”çš„tag
 USTRUCT(BlueprintType)
 struct FTaggedMontage
 {
@@ -46,22 +58,24 @@ class MNB_GAS_API ICombatInterface
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-
-	virtual int32 GetPlayerLevel();
+	UFUNCTION(BlueprintNativeEvent)
+	int32 GetPlayerLevel();
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	FVector GetCombatSocketLocation(const FGameplayTag& MontageTag);
 
-	// À¶Í¼¿ÉÊµÏÖ¿Éµ÷ÓÃ
+	// è“å›¾å¯å®ç°å¯è°ƒç”¨
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void UpdateFacingTarget(const FVector& Target);
 
-	// C++ÖĞÖØÔØ À¶Í¼¿Éµ÷ÓÃ
+	// C++ä¸­é‡è½½ è“å›¾å¯è°ƒç”¨
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	UAnimMontage* GetHitReactMontage();
 
-	// ´¿Ğéº¯Êı
-	virtual void Die() = 0;
+	// çº¯è™šå‡½æ•°
+	virtual void Die(const FVector& DeathImpulse) = 0;
+	virtual FOnDamageSignature& GetOnDamageSignature() = 0;
+	
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	bool IsDead() const;
@@ -86,4 +100,26 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void IncrementMinionCount(int32 Amount);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	ECharacterClass GetCharacterClass();
+
+
+	virtual FOnASCRegistered GetOnASCRegisteredDelegate() = 0;
+	virtual FOnDeathSignature& GetOnDeathDelegate() = 0;
+
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void SetInShockLoop(bool bInLoop);
+
+
+	// è·å–æ­¦å™¨
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	USkeletalMeshComponent* GetWeapon();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	bool IsBeingShockLoop() const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void SetBeingShockLoop(bool bInShock);
 };

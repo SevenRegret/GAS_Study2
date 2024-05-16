@@ -13,6 +13,7 @@ struct FWidgetControllerParams;
 class UAbilitySystemComponent;
 class UAttributeSet;
 class UAttributeMenuWidgetController;
+class USpellMenuWidgetController;
 /**
  * 
  */
@@ -27,6 +28,8 @@ public:
 
 	UAttributeMenuWidgetController* GetUAttributeMenuWidgetController(const FWidgetControllerParams& WCParams);
 
+	USpellMenuWidgetController* GetSpellMenuWidgetController(const FWidgetControllerParams& WCParams);
+
 	// 初始化覆盖层
 	void InitOverlay(APlayerController* PC, APlayerState* PS, UAbilitySystemComponent* ASC, UAttributeSet* AS);
 
@@ -38,6 +41,7 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UAuraUserWidget> OverlayWidgetClass;
 
+	// 保存HUD里面需要的WC，控制界面与程序的交互
 	UPROPERTY()
 	TObjectPtr<UOverlayWidgetController> OverlayWidgetController;
 
@@ -49,4 +53,10 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UAttributeMenuWidgetController> AttributeMenuWidgetControllerClass;
+
+	UPROPERTY()
+	TObjectPtr<USpellMenuWidgetController> SpellMenuWidgetController;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<USpellMenuWidgetController> SpellMenuWidgetControllerClass;
 };

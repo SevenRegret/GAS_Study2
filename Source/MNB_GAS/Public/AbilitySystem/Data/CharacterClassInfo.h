@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "ScalableFloat.h"
 #include "CharacterClassInfo.generated.h"
 
 
@@ -29,9 +30,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Class Defaults")
 	TSubclassOf<UGameplayEffect> PrimaryAttribute;
 
-	// ´æ´¢GAµÄ¼¯ºÏ, ĞèÒªÓÎÏ·¿ªÊ¼¾ÍšG½ÇÉ«µÄ
+	// å­˜å‚¨GAçš„é›†åˆ, éœ€è¦æ¸¸æˆå¼€å§‹å°±æ¬¸è§’è‰²çš„
 	UPROPERTY(EditDefaultsOnly, Category = "Class Defaults")
 	TArray<TSubclassOf<UGameplayAbility>> StartupAbilities;
+
+	// æ€ªç‰©è‡ªå¸¦ä¸€ä¸ªç»éªŒå¥–åŠ±æ›²çº¿
+	UPROPERTY(EditDefaultsOnly, Category = "Class Defaults")
+	FScalableFloat XPReward = FScalableFloat();
 };
 
 /**
@@ -46,19 +51,24 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Character Class Defaults")
 	TMap<ECharacterClass, FCharacterClassDefaultInfo> CharacterClassInfomation;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Character Class Defaults")
+	TSubclassOf<UGameplayEffect> PrimaryAttributes_SetByCaller;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Common Class Defaults")
 	TSubclassOf<UGameplayEffect> SecondaryAttributes;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Common Class Defaults")
+	TSubclassOf<UGameplayEffect> SecondaryAttributes_Infinite;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Common Class Defaults")
 	TSubclassOf<UGameplayEffect> VitalAttributes;
 
-	// ´æ´¢GAµÄ¼¯ºÏ
+	// å­˜å‚¨GAçš„é›†åˆ
 	UPROPERTY(EditDefaultsOnly, Category = "Common Class Defaults")
 	TArray<TSubclassOf<UGameplayAbility>> CommonAbilities;
 
 
-	// ´æ´¢¼ÆËãÏµÊı
+	// å­˜å‚¨è®¡ç®—ç³»æ•°
 	UPROPERTY(EditDefaultsOnly, Category = "Common Class Defaults")
 	TObjectPtr<UCurveTable> DamageCalculationCoefficients;
 

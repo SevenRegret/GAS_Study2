@@ -18,9 +18,9 @@ UCLASS()
 class MNB_GAS_API UAuraProjectileSpell : public UAuraDamageGameplayAbility
 {
 	GENERATED_BODY()
-	
+
 protected:
-	// AB¼¤»îÊ±µ÷ÓÃ
+	// ABæ¿€æ´»æ—¶è°ƒç”¨
 	virtual void ActivateAbility(
 		const FGameplayAbilitySpecHandle Handle, 
 		const FGameplayAbilityActorInfo* ActorInfo, 
@@ -35,8 +35,10 @@ protected:
 		float PitchOverride = 0.f);
 
 
-	// ĞèÒªÉú³ÉµÄµ¯ÌåÀà
+	// éœ€è¦ç”Ÿæˆçš„å¼¹ä½“ç±»
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSubclassOf<AAuraProjectile> ProjectileClass;
 
+	UPROPERTY(EditDefaultsOnly)
+	int32 NumProjectiles = 5;
 };

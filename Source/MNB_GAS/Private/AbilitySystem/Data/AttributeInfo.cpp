@@ -2,6 +2,7 @@
 
 
 #include "AbilitySystem/Data/AttributeInfo.h"
+#include "MNB_GAS/MNB_GASLogChannels.h"
 
 FAuraAttributeInfo UAttributeInfo::FindAttributeInfoForTag(const FGameplayTag& AttributeTag, bool blogNotFound) const
 {
@@ -17,7 +18,7 @@ FAuraAttributeInfo UAttributeInfo::FindAttributeInfoForTag(const FGameplayTag& A
 
     if (blogNotFound)
     {
-        UE_LOG(LogTemp, Error, 
+        UE_LOG(LogAura, Error, 
             TEXT("Can't find Info for AttributeTag [%s] on AttributeInfo [%s]"), 
             *AttributeTag.ToString(), *GetNameSafe(this));
 

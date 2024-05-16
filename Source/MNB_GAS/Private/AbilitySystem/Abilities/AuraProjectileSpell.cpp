@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "AbilitySystem/Abilities/AuraProjectileSpell.h"
@@ -7,6 +7,8 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include <AuraGameplayTags.h>
+
+
 
 void UAuraProjectileSpell::ActivateAbility(
 	const FGameplayAbilitySpecHandle Handle,
@@ -17,18 +19,18 @@ void UAuraProjectileSpell::ActivateAbility(
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
 
-
+	
 
 }
 
-// ¼òµ¥µÄÉú³Éµ¯ÌåÂß¼­
+// ç®€å•çš„ç”Ÿæˆå¼¹ä½“é€»è¾‘
 void UAuraProjectileSpell::SpawnProjectile(
 	const FVector& ProjectileTargetLocation, 
 	const FGameplayTag& SocketTag, 
 	bool bOverridePitch,
 	float PitchOverride)
 {
-	// Í¨¹ý¼¤»îÐÅÏ¢ÅÐ¶ÏÊÇ·ñÎª·þÎñÆ÷
+	// é€šè¿‡æ¿€æ´»ä¿¡æ¯åˆ¤æ–­æ˜¯å¦ä¸ºæœåŠ¡å™¨
 	const bool bIsServer = GetAvatarActorFromActorInfo()->HasAuthority();
 
 	if (!bIsServer) return;
@@ -36,17 +38,17 @@ void UAuraProjectileSpell::SpawnProjectile(
 	const FVector SocketLocation = 
 		ICombatInterface::Execute_GetCombatSocketLocation(GetAvatarActorFromActorInfo(), SocketTag);
 
-	// µ¯ÌåÄ¿±ê·½ÏòºÍÎäÆ÷socketÎ»ÖÃ×ö²îÖµµÃµ½Ðý×ª
+	// å¼¹ä½“ç›®æ ‡æ–¹å‘å’Œæ­¦å™¨socketä½ç½®åšå·®å€¼å¾—åˆ°æ—‹è½¬
 	FRotator Rotation = (ProjectileTargetLocation - SocketLocation).Rotation();
 
 
-	// ÔÚaura½ÇÉ«µÄÎäÆ÷´¦Éú³Éµ¯Ìå£¬ÔòÐèÒªÆäÎäÆ÷µÄsocket½Ó¿Ú
+	// åœ¨auraè§’è‰²çš„æ­¦å™¨å¤„ç”Ÿæˆå¼¹ä½“ï¼Œåˆ™éœ€è¦å…¶æ­¦å™¨çš„socketæŽ¥å£
 	FTransform SpawnTransform;
 	SpawnTransform.SetLocation(SocketLocation);
-	// TODO ÉèÖÃµ¯ÌåµÄÐý×ªÊ¸Á¿µÈ
+	// TODO è®¾ç½®å¼¹ä½“çš„æ—‹è½¬çŸ¢é‡ç­‰
 	SpawnTransform.SetRotation(Rotation.Quaternion());
 
-	// Èç¹ûÐèÒªÖØÖÃ¸ß¶È
+	// å¦‚æžœéœ€è¦é‡ç½®é«˜åº¦
 	if (bOverridePitch)
 	{
 		Rotation.Pitch = PitchOverride;
@@ -61,47 +63,10 @@ void UAuraProjectileSpell::SpawnProjectile(
 		ESpawnActorCollisionHandlingMethod::AlwaysSpawn
 	);
 
-	// TODO ¸øµ¯ÌåÒ»¸öGEÐ§¹û ÉèÖÃµ¯ÌåÉËº¦
-	// ÉËº¦GE1.´ÓavatarActorÄÃµ½ASC
-	const UAbilitySystemComponent* SourceASC =
-		UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetAvatarActorFromActorInfo());
+	// 3. æŒ‡å®šå¼¹ä½“EffectParams
+	Projectile->DamageEffectParams = MakeDamageEffectParamsClassDefaults();
 
-	// EffectContextÉèÖÃ
-	FGameplayEffectContextHandle EffectContextHandle = SourceASC->MakeEffectContext();
-	EffectContextHandle.SetAbility(this);
-	EffectContextHandle.AddSourceObject(Projectile);
-	TArray<TWeakObjectPtr<AActor>> Actors;
-	Actors.Add(Projectile);
-	EffectContextHandle.AddActors(Actors);
-	FHitResult HitResult;
-	HitResult.Location = ProjectileTargetLocation;
-	EffectContextHandle.AddHitResult(HitResult);
-
-
-	// 2.
-	const FGameplayEffectSpecHandle SpecHandle =
-		SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), SourceASC->MakeEffectContext());
-
-	// Éú³Éµ¯ÌåÍ¬Ê±¸³ÓèÆäDamageTag(ÅäºÏdamageGeÖÐµÄSetByCallerÑ¡Ïî
-	const FAuraGameplayTags  GameplayTags = FAuraGameplayTags::Get();
-
-
-	// ±éÀúÉËº¦ÀàÐÍ£¬»ñÈ¡ÆäÉËº¦Öµ
-	for (auto& Pair : DamageTypes)
-	{
-		const float ScaleDamage = Pair.Value.GetValueAtLevel(GetAbilityLevel());
-		UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, Pair.Key, ScaleDamage);
-	}
-
-	//GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red, FString::Printf(TEXT("FireBolt Damage: %f"), ScaleDamage));
-
-	// °´ÅäÖÃµÄCurveTableÅäÖÃÓ¦¸ÃÔì³ÉµÄÉËº¦
-	//UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, GameplayTags.Damage, ScaleDamage);
-
-
-	// 3. Ö¸¶¨µ¯ÌåHandle
-	Projectile->DamageEffectSpecHandle = SpecHandle;
-	// ×îºó±ØÐëfinishÉú³É 
+	// æœ€åŽå¿…é¡»finishç”Ÿæˆ 
 	Projectile->FinishSpawning(SpawnTransform);
 
 }

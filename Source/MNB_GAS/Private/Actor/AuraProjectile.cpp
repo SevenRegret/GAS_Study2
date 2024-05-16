@@ -19,6 +19,7 @@ AAuraProjectile::AAuraProjectile()
 	PrimaryActorTick.bCanEverTick = true;
 
 	bReplicates = true;
+	SetReplicateMovement(true);
 
 	Sphere = CreateDefaultSubobject<USphereComponent>("Sphere");
 	SetRootComponent(Sphere);
@@ -42,7 +43,7 @@ void AAuraProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 	SetLifeSpan(LifeSpan);
-
+	SetReplicateMovement(true);
 	Sphere->OnComponentBeginOverlap.AddDynamic(this, &AAuraProjectile::OnShpereOverlap);
 
 	LoopingSoundComponent = UGameplayStatics::SpawnSoundAttached(LoopingSound, GetRootComponent());
@@ -52,14 +53,7 @@ void AAuraProjectile::Destroyed()
 {
 	if (!bHit && !HasAuthority())
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation(), FRotator::ZeroRotator);
-
-		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ImpactEffect, GetActorLocation());
-		if (LoopingSoundComponent)
-		{
-			LoopingSoundComponent->Stop();
-		}
-		bHit = true;
+		OnHit();
 	}
 
 
@@ -68,41 +62,43 @@ void AAuraProjectile::Destroyed()
 
 void AAuraProjectile::OnShpereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	// GESpeHandle ˝æ›Œﬁ–ß ªÚ’ﬂ ”ˆµΩ÷ÿµ˛≈–∂®µΩ◊‘…Ì¡À∂ºÕ∆≥ˆ
-	if (!DamageEffectSpecHandle.Data.IsValid() || DamageEffectSpecHandle.Data.Get()->GetContext().GetEffectCauser() == OtherActor)
+	if (!IsValidOverlap(OtherActor))
 	{
 		return;
 	}
 
-	if (!UAuraAbilitySystemLibrary::IsNotFriend(DamageEffectSpecHandle.Data.Get()->GetContext().GetEffectCauser(), OtherActor))
-	{
-		return;
-	}
-
-	// »Áπ˚√ª≤•∑≈π˝£®∑¿÷πøÕªß∂À∑˛ŒÒ∂ÀÀ´÷ÿ≤•∑≈
+	// Â¶ÇÊûúÊ≤°Êí≠ÊîæËøáÔºàÈò≤Ê≠¢ÂÆ¢Êà∑Á´ØÊúçÂä°Á´ØÂèåÈáçÊí≠Êîæ
 	if (!bHit)
 	{
 		//UE_LOG()
-		// ≈ˆ◊≤µΩŒÔÃÂ ±£¨≤•∑≈…˘“Ù∫ÕÃÿ–ß
-		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation(), FRotator::ZeroRotator);
-
-		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ImpactEffect, GetActorLocation());
-
-		if (LoopingSoundComponent)
-		{
-			LoopingSoundComponent->Stop();
-		}
-		bHit = true;
+		// Á¢∞ÊíûÂà∞Áâ©‰ΩìÊó∂ÔºåÊí≠ÊîæÂ£∞Èü≥ÂíåÁâπÊïà
+		OnHit();
 	}
 
 	
 	if (HasAuthority())
 	{
-		// Õ®π˝OtherActorƒ√µΩASC
+		// ÈÄöËøáOtherActorÊãøÂà∞ASC
 		if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor))
 		{
-			// ª˜÷–ºÏ≤‚ ±Apply targetµƒGE
-			TargetASC->ApplyGameplayEffectSpecToSelf(*DamageEffectSpecHandle.Data.Get());
+			// ËÑâÂÜ≤Á≥ªÊï∞‰∏éÊñπÂêë
+			const FVector DeathImpulse = GetActorForwardVector() * DamageEffectParams.DeathImpulseMagnitude;
+			DamageEffectParams.DeathImpulse = DeathImpulse;
+
+			const bool bKnockback = FMath::RandRange(1, 100) < DamageEffectParams.KnockbackChance;
+			// ÂáªÈÄÄÊ¶ÇÁéáÂíåÊñπÂêë
+			if (bKnockback)
+			{
+				FRotator Rotation = GetActorRotation();
+				Rotation.Pitch = 45.f;
+
+				const FVector KnockbackDirection = Rotation.Vector();
+				const FVector KnockbackForce = KnockbackDirection * DamageEffectParams.KnockbackForceMagnitude;
+				DamageEffectParams.KnockbackForce = KnockbackForce;
+			}
+			// Âáª‰∏≠Ê£ÄÊµãÊó∂Apply targetÁöÑGE
+			DamageEffectParams.TargetAbilitySystemComponent = TargetASC;
+			UAuraAbilitySystemLibrary::ApplyDamageEffect(DamageEffectParams);
 		}
 
 		Destroy();
@@ -111,6 +107,38 @@ void AAuraProjectile::OnShpereOverlap(UPrimitiveComponent* OverlappedComponent, 
 	{
 		bHit = true;
 	}
+}
+
+bool AAuraProjectile::IsValidOverlap(AActor* OtherActor)
+{
+	if (DamageEffectParams.SourceAbilitySystemComponent == nullptr) return false;
+	// GESpeHandleÊï∞ÊçÆÊó†Êïà ÊàñËÄÖ ÈÅáÂà∞ÈáçÂè†Âà§ÂÆöÂà∞Ëá™Ë∫´‰∫ÜÈÉΩÊé®Âá∫
+	AActor* SourceAvatorActor = DamageEffectParams.SourceAbilitySystemComponent->GetAvatarActor();
+	if (SourceAvatorActor == OtherActor)
+	{
+		return false;
+	}
+
+	// ÂèãÂÜõÂà§Êñ≠
+	if (!UAuraAbilitySystemLibrary::IsNotFriend(SourceAvatorActor, OtherActor))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void AAuraProjectile::OnHit()
+{
+	UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation(), FRotator::ZeroRotator);
+
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, ImpactEffect, GetActorLocation());
+	if (LoopingSoundComponent)
+	{
+		LoopingSoundComponent->Stop();
+		LoopingSoundComponent->DestroyComponent();
+	}
+	bHit = true;
 }
 
 

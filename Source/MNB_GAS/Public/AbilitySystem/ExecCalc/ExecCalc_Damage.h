@@ -7,7 +7,7 @@
 #include "ExecCalc_Damage.generated.h"
 
 /**
- *    ÉËº¦¼ÆËãÖ´ÐÐ
+ *    ä¼¤å®³è®¡ç®—æ‰§è¡Œ
  */
 UCLASS()
 class MNB_GAS_API UExecCalc_Damage : public UGameplayEffectExecutionCalculation
@@ -17,7 +17,15 @@ class MNB_GAS_API UExecCalc_Damage : public UGameplayEffectExecutionCalculation
 public:
     UExecCalc_Damage();
 
-    // Ö´ÐÐ¼ÆËãÀàº¯ÊýÊ±µ÷ÓÃ
+    // æ‰§è¡Œè®¡ç®—ç±»å‡½æ•°æ—¶è°ƒç”¨
     virtual void Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams,
         FGameplayEffectCustomExecutionOutput& OoutExecutionOutput) const override;
+
+
+    // æ£€æµ‹
+    void DetermineDebuff(
+        const FGameplayEffectCustomExecutionParameters& ExecutionParams,
+        const FGameplayEffectSpec& Spec,
+        FAggregatorEvaluateParameters EvaluationParameters,
+        const TMap<FGameplayTag, FGameplayEffectAttributeCaptureDefinition>& InTagsToDefs) const;
 };
